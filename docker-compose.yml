@@ -1,0 +1,33 @@
+name: nbtc
+services:
+  nbtc-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nbtc-api
+    restart: always
+    ports:
+      - 3300:3300
+    volumes:
+      - ./src:/app/src
+      - .env:/app/.env
+    depends_on:
+      - nbtc-db
+    scale: 1
+    networks:
+      - nbtc-network
+  nbtc-db:
+    image: mongo:8.0.12-noble
+    container_name: nbtc-db
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - nbtc-db-data:/data/db
+    networks:
+      - nbtc-network
+volumes:
+  nbtc-db-data:
+networks:
+  nbtc-network:
+    driver: bridge
