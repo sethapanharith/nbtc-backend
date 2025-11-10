@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticate } from "../middlewares/auth.middleware.js";
+import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import { actionValidator } from "../validators/action.validator.js";
 import validationError from "../middlewares/validation.js";
 
@@ -143,14 +143,21 @@ const router = express.Router();
  *                   example: Access denied, no token provided
  */
 
-router.post("/", authenticate, actionValidator, validationError, createAction);
+router.post(
+  "/",
+  authenticate,
+  authorize(["SystemAdmin"]),
+  actionValidator,
+  validationError,
+  createAction
+);
 
-router.route("/").get(authenticate, getActions);
+router.route("/").get(authenticate, authorize(["SystemAdmin"]), getActions);
 
 router
   .route("/:id")
-  .get(authenticate, getActionById)
-  .put(authenticate, updateAction)
-  .delete(authenticate, deleteAction);
+  .get(authenticate, authorize(["SystemAdmin"]), getActionById)
+  .put(authenticate, authorize(["SystemAdmin"]), updateAction)
+  .delete(authenticate, authorize(["SystemAdmin"]), deleteAction);
 
 export default router;

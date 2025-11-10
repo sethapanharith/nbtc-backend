@@ -25,7 +25,13 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       populate: { path: "actions" },
     });
 
-    if (!user) return successResponse(res, 401, "User not found.", []);
+    if (!user)
+      return successResponse(
+        res,
+        401,
+        "Access denied. This user not found in database.",
+        []
+      );
 
     if (!user.isActive)
       return successResponse(res, 403, "User is inactive.", []);
@@ -77,17 +83,65 @@ export const authenticate = asyncHandler(async (req, res, next) => {
 });
 
 // Role-based permission
-export const authorize = asyncHandler(async (requiredAction) => {
-  return (req, res, next) => {
-    if (!req.user || !req.user.roleId) {
-      return successResponse(res, 403, "Forbidden", []);
+// export const authorize = asyncHandler(async (requiredAction) => {
+//   return (req, res, next) => {
+//     if (!req.user || !req.user.roleId) {
+//       return successResponse(res, 403, "Forbidden", []);
+//     }
+
+//     const hasAction = req.user.roleId.actions.some(
+//       (a) => a.name === requiredAction
+//     );
+//     if (!hasAction) return successResponse(res, 403, "Forbidden", []);
+
+//     next();
+//   };
+// });
+
+export const authorize = (roles = []) => {
+  return async (req, res, next) => {
+    try {
+      const user = req.user;
+      if (!user || !user.roleId || user.roleId.length === 0) {
+        return successResponse(
+          res,
+          403,
+          "Access denied. No roles assigned.",
+          []
+        );
+      }
+
+      // Extract role names (handle case where roleId is array of objects)
+      const userRoles = user.roleId.map((role) => role.name);
+
+      console.log("User Roles:", userRoles);
+
+      // Check if any user role matches allowed roles
+      // const hasAccess = roles.some((role) => userRoles.includes(role));
+
+      const hasAccess = roles.some((role) =>
+        userRoles.map((r) => r.toLowerCase()).includes(role.toLowerCase())
+      );
+
+      if (!hasAccess) {
+        return successResponse(
+          res,
+          403,
+          `Access denied. This route requires one of: [${roles.join(", ")}]`,
+          []
+        );
+      }
+      return next();
+    } catch (err) {
+      return errorResponse(
+        res,
+        500,
+        {
+          code: "ServerError",
+          message: "Internal server error with authorizing user roles",
+        },
+        err
+      );
     }
-
-    const hasAction = req.user.roleId.actions.some(
-      (a) => a.name === requiredAction
-    );
-    if (!hasAction) return successResponse(res, 403, "Forbidden", []);
-
-    next();
   };
-});
+};

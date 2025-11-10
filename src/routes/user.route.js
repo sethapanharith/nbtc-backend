@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticate } from "../middlewares/auth.middleware.js";
+import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import {
   getUsers,
   getUserById,
@@ -38,20 +38,6 @@ const router = express.Router();
  *         schema:
  *           type: integer
  *           default: 1
- *       - name: sort
- *         in: query
- *         description: Sort users by specified fields (e.g., "createdAt:desc,email:asc")
- *         required: false
- *         schema:
- *           type: string
- *           example: createdAt:desc,firstName:asc
- *       - name: populate
- *         in: query
- *         description: Fields to populate (comma-separated)
- *         required: false
- *         schema:
- *           type: string
- *           example: roleId,branchId
  *     responses:
  *       200:
  *         description: Successful response with paginated users
@@ -60,15 +46,20 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get("/", authenticate, getUsers);
+router.get("/", authenticate, authorize(["Admin"]), getUsers);
 
-router.post("/register-with-info", createUser);
+router.post(
+  "/register-with-info",
+  authenticate,
+  authorize(["Admin"]),
+  createUser
+);
 
 // router.route("/").get(protect, getUsers);
 router
   .route("/:id")
-  .get(authenticate, getUserById)
-  .put(authenticate, updateUser)
-  .delete(authenticate, deleteUser);
+  .get(authenticate, authorize(["Admin", "Staff"]), getUserById)
+  .put(authenticate, authorize(["Admin", "Staff"]), updateUser)
+  .delete(authenticate, authorize(["Admin", "Staff"]), deleteUser);
 
 export default router;
