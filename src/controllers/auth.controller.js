@@ -123,35 +123,59 @@ export const me = asyncHandler(async (req, res) => {
   }
 });
 
-// export const me = asyncHandler(async (req, res) => {
-//   try {
-//     const reqUser = req.user;
-//     const user = await User.findById(reqUser._id)
-//       .populate([
-//         { path: "userInfoId", option: { lean: { virtuals: true } } },
-//         { path: "roleId", option: { lean: true } },
-//       ])
-//       .lean({ virtuals: true });
-//     if (!user) {
-//       return successResponse(res, 404, "User not found.", []);
-//     }
+export const resetPasswordByAdmin = asyncHandler(async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword)
+      return errorResponse(res, 400, "User ID and new password required.");
 
-//     delete user.password;
-//     delete user.__v;
+    const user = await User.findById(userId);
+    if (!user) return errorResponse(res, 404, "User not found.");
 
-//     if (user.userInfoId) {
-//       delete user.userInfoId.__v;
-//       delete user.userInfoId.deleted;
-//     }
+    user.password = newPassword;
+    await user.save();
 
-//     // const userInfo = user.toObject();
-//     // delete userInfo.password;
-//     // delete userInfo.__v;
-//     // delete userInfo.userInfoId.__v;
-//     // delete userInfo.userInfoId.deleted;
+    return successResponse(res, 200, "Password reset by admin successful.");
+  } catch (error) {
+    return errorResponse(res, 500, "Failed to reset password", error.message);
+  }
+});
 
-//     return successResponse(res, 200, "User profile get successfully.", user);
-//   } catch (error) {
-//     return errorResponse(res, 500, "Internal server error", error.message);
-//   }
-// });
+export const changePassword = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword)
+      return errorResponse(res, 400, "All fields are required.");
+
+    if (newPassword !== confirmPassword)
+      return errorResponse(
+        res,
+        400,
+        "New password and confirmation do not match."
+      );
+
+    if (currentPassword === newPassword)
+      return errorResponse(
+        res,
+        400,
+        "New password is the same current password."
+      );
+
+    const user = await User.findById(userId);
+    if (!user) return errorResponse(res, 404, "User not found.");
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch)
+      return errorResponse(res, 401, "Current password is incorrect.");
+
+    // Update new password
+    user.password = newPassword;
+    await user.save();
+
+    return successResponse(res, 200, "Password changed successfully.");
+  } catch (error) {
+    return errorResponse(res, 500, "Failed to change password", error.message);
+  }
+});

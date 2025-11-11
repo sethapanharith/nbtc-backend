@@ -1,6 +1,14 @@
 import express from "express";
-import { loginUser, registerUser, me } from "../controllers/auth.controller.js";
+import { body } from "express-validator";
+import {
+  loginUser,
+  registerUser,
+  me,
+  resetPasswordByAdmin,
+  changePassword,
+} from "../controllers/auth.controller.js";
 import { authenticate, authorize } from "../middlewares/auth.middleware.js";
+import validationError from "../middlewares/validation.js";
 
 const router = express.Router();
 
@@ -216,7 +224,7 @@ router.post("/login", loginUser);
  *                   type: string
  *                   example: Access denied, no token provided
  */
-router.post("/register", authenticate, registerUser);
+router.post("/register", authenticate, authorize(["Admin"]), registerUser);
 
 /**
  * @swagger
@@ -234,5 +242,97 @@ router.post("/register", authenticate, registerUser);
  *         description: Server error
  */
 router.get("/me", authenticate, me);
+
+/**
+ * @swagger
+ * /api/auth/reset/change-password:
+ *   patch:
+ *     summary: user can reset their password by themselves
+ *     description: User can change own password by providing old password new password and confirm password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 example: oldpassword123
+ *               newPassword:
+ *                 type: string
+ *                 example: newpassword123
+ *               confirmPassword:
+ *                 type: string
+ *                 example: newpassword123
+ *           examples:
+ *             User Changing Own Password:
+ *               summary: Change Password
+ *               description: User changing their own password
+ *               value:
+ *                 currentPassword: "oldPassword123"
+ *                 newPassword: "newPassword123"
+ *                 confirmPassword: "newPassword123"
+ *     responses:
+ *       200:
+ *         description: Successful response user information
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.patch("/reset/change-password", authenticate, changePassword);
+
+/**
+ * @swagger
+ * /api/auth/reset/admin:
+ *   patch:
+ *     summary: all user's password can be reset by admin
+ *     description: User can not reset their password by themselves, user need to ask admin to reset their password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439011
+ *               newPassword:
+ *                 type: string
+ *                 example: newPassword123
+ *           examples:
+ *             Pass Reset By Administrator:
+ *               summary: Reset By Admin
+ *               description: user's password reset by admin
+ *               value:
+ *                 userId: "507f1f77bcf86cd799439011"
+ *                 newPassword: "secure_password"
+ *     responses:
+ *       200:
+ *         description: Successful response user information
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.patch(
+  "/reset/admin",
+  authenticate,
+  authorize(["Admin"]),
+  body("userId")
+    .notEmpty()
+    .withMessage("User ID is required")
+    .isMongoId()
+    .withMessage("Invalid User ID"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("New password must be at least 6 characters long"),
+  validationError,
+  resetPasswordByAdmin
+);
 
 export default router;
