@@ -7,6 +7,8 @@ import {
   deleteUser,
   createUser,
 } from "../controllers/user.controller.js";
+import { userValidator } from "../validators/user.validator.js";
+import { validateRequest } from "../middlewares/validation.js";
 
 const router = express.Router();
 /**
@@ -47,13 +49,93 @@ const router = express.Router();
  *         description: Server error
  */
 router.get("/", authenticate, authorize(["Admin"]), getUsers);
-
-router.post(
-  "/register-with-info",
-  authenticate,
-  authorize(["Admin"]),
-  createUser
-);
+/**
+ * @swagger
+ * /api/user/register-with-info:
+ *   post:
+ *     summary: create a new user with user info
+ *     description: this route for general use, no authentication or authorization need.
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: cadt
+ *               fullName:
+ *                 type: string
+ *                 example: Cambodia Academy of Digital Technology
+ *               password:
+ *                 type: string
+ *                 example: cadt123
+ *                 description: password at least 6 or more
+ *               roleId:
+ *                 type: array
+ *                 example: []
+ *               branchId:
+ *                 type: string
+ *                 example: null
+ *               userInfo:
+ *                 type: object
+ *                 properties:
+ *                   firstName:
+ *                     type: CADT
+ *                     example: John
+ *                   lastName:
+ *                     type: string
+ *                     example: CADT
+ *                   gender:
+ *                     type: string
+ *                     enum: [M, F, Other]
+ *                     example: Other
+ *                   dateOfBirth:
+ *                     type: string
+ *                     format: date
+ *                     example: 1990-01-01
+ *                   maritalStatus:
+ *                     type: string
+ *                     enum: [Single, Married, Divorced, Widowed, Other]
+ *                     example: Other
+ *                   occupation:
+ *                     type: string
+ *                     example: Digital and Technology
+ *                   address:
+ *                     type: string
+ *                     example: "123 Main St"
+ *                   phoneNumber:
+ *                     type: string
+ *                     example: 012-456-789
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     example: info@cadt.gov.kh
+ *                   identifications:
+ *                     type: object
+ *                     properties:
+ *                       cardType:
+ *                         type: string
+ *                         example: "CADT Card"
+ *                       cardCode:
+ *                         type: string
+ *                         example: "123456789"
+ *             required:
+ *               - username
+ *               - fullName
+ *               - password
+ *               - userInfo
+ *     responses:
+ *       200:
+ *         description: Successful response with paginated users
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post("/register-with-info", userValidator, validateRequest, createUser);
 
 // router.route("/").get(protect, getUsers);
 router

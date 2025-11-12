@@ -80,6 +80,7 @@ export const createUser = asyncHandler(async (req, res) => {
       .lean();
 
     delete userObj.__v;
+    delete userObj.password;
     if (userObj.userInfoId) {
       delete userObj.userInfoId.__v;
     }

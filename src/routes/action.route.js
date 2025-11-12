@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import { actionValidator } from "../validators/action.validator.js";
-import validationError from "../middlewares/validation.js";
+import {validationError} from "../middlewares/validation.js";
 
 import {
   createAction,
