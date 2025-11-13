@@ -48,7 +48,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get("/", authenticate, authorize(["Admin"]), getUsers);
+router.get("/", authenticate, authorize(["SystemAdmin","Admin"]), getUsers);
 /**
  * @swagger
  * /api/user/register-with-info:
@@ -140,8 +140,8 @@ router.post("/register-with-info", userValidator, validateRequest, createUser);
 // router.route("/").get(protect, getUsers);
 router
   .route("/:id")
-  .get(authenticate, authorize(["Admin", "Staff"]), getUserById)
-  .put(authenticate, authorize(["Admin", "Staff"]), updateUser)
-  .delete(authenticate, authorize(["Admin", "Staff"]), deleteUser);
+  .get(authenticate, authorize(["SystemAdmin","Admin", "Staff"]), getUserById)
+  .put(authenticate, authorize(["SystemAdmin","Admin", "Staff"]), updateUser)
+  .delete(authenticate, authorize(["SystemAdmin","Admin", "Staff"]), deleteUser);
 
 export default router;

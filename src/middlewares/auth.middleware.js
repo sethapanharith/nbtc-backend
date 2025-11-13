@@ -114,11 +114,13 @@ export const authorize = (roles = []) => {
       // Extract role names (handle case where roleId is array of objects)
       const userRoles = user.roleId.map((role) => role.name);
 
-      console.log("User Roles:", userRoles);
+      // ✅ If user has SystemAdmin role → always allow
+      if (userRoles.includes("SystemAdmin")) {
+        return next();
+      }
 
       // Check if any user role matches allowed roles
       // const hasAccess = roles.some((role) => userRoles.includes(role));
-
       const hasAccess = roles.some((role) =>
         userRoles.map((r) => r.toLowerCase()).includes(role.toLowerCase())
       );

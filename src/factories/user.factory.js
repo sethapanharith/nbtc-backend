@@ -56,6 +56,7 @@ const importData = async () => {
 
     // --- 1. CREATE ROLES & MAP IDs ---
     const rolesData = [
+      { name: "SystemAdmin", description: "Full system access all" },
       { name: "Admin", description: "Full system access" },
       { name: "Manager", description: "Branch management" },
       { name: "Staff", description: "Daily operations" },
@@ -90,6 +91,12 @@ const importData = async () => {
     // --- 🚨 MANUAL HASHING END 🚨 ---
 
     const foundationalUsers = [
+      {
+        username: "SystemAdmin",
+        roleName: "SystemAdmin",
+        firstName: "Administrator",
+        lastName: "System",
+      },
       {
         username: "admin",
         roleName: "Admin",

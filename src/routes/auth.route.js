@@ -224,7 +224,12 @@ router.post("/login", loginUser);
  *                   type: string
  *                   example: Access denied, no token provided
  */
-router.post("/register", authenticate, authorize(["Admin"]), registerUser);
+router.post(
+  "/register",
+  authenticate,
+  authorize(["SystemAdmin", "Admin"]),
+  registerUser
+);
 
 /**
  * @swagger
@@ -322,7 +327,7 @@ router.patch("/reset/change-password", authenticate, changePassword);
 router.patch(
   "/reset/admin",
   authenticate,
-  authorize(["Admin"]),
+  authorize(["SystemAdmin", "Admin"]),
   body("userId")
     .notEmpty()
     .withMessage("User ID is required")

@@ -217,7 +217,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
     return successResponse(res, 200, "data get successfully", userData);
   } catch (error) {
-    errorResponse(res, 500, "Failed to get user info", error.message);
+    return errorResponse(res, 500, "Failed to get user info", error.message);
   }
 });
 
