@@ -61,6 +61,7 @@ const importData = async () => {
       { name: "Manager", description: "Branch management" },
       { name: "Staff", description: "Daily operations" },
       { name: "Viewer", description: "Read-only access" },
+      { name: "User", description: "User registered by mobile" },
     ];
     const createdRoles = await Role.insertMany(rolesData);
     const roleMap = {};
@@ -120,6 +121,12 @@ const importData = async () => {
         roleName: "Viewer",
         firstName: "David",
         lastName: "Viewer",
+      },
+      {
+        username: "user",
+        roleName: "user",
+        firstName: "Guest",
+        lastName: "User",
       },
     ];
 
