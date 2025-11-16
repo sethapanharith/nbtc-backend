@@ -221,13 +221,42 @@ export const getUsers = asyncHandler(async (req, res) => {
   }
 });
 
-export const getUserById = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).populate("roleId");
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found");
+export const getUserInfoById = asyncHandler(async (req, res) => {
+  try {
+    const { userInfoId } = req.params;
+
+    if (!userInfoId && !mongoose.Types.ObjectId.isValid(userInfoId)) {
+      return successResponse(res, 400, "Invalid user info ID", []);
+    }
+    const userInfo = await UserInfo.findById(userInfoId).lean();
+    if (!userInfo) {
+      return successResponse(
+        res,
+        404,
+        `UserInfo not found with id: ${userInfoId}`,
+        []
+      );
+    }
+
+    delete userInfo.password;
+    delete userInfo.__v;
+    delete userInfo.deleted;
+
+    let result = { userInfoId: userInfo };
+    const user = await User.findOne({ userInfoId })
+      .populate([{ path: "branchId" }, { path: "roleId" }])
+      .lean();
+    if (user) {
+      result.branchId = user.branchId;
+      result.roleId = user.roleId;
+      result.username = user.username;
+      result.fullName = user.fullName;
+    }
+
+    return successResponse(res, 200, "User profile get successfully.", result);
+  } catch (error) {
+    return errorResponse(res, 500, "Internal server error", error.message);
   }
-  res.json(user);
 });
 
 export const updateUser = asyncHandler(async (req, res) => {
@@ -240,4 +269,120 @@ export const updateUser = asyncHandler(async (req, res) => {
 export const deleteUser = asyncHandler(async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.json({ message: "User deleted" });
+});
+
+export const createUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      gender,
+      dateOfBirth,
+      maritalStatus,
+      occupation,
+    } = req.body;
+
+    const address = req.body.address || "";
+    const phoneNumber = req.body.phoneNumber || "";
+    const email = req.body.email || "";
+    const identifications = req.body.identifications || [];
+
+    // Create UserInfo document
+    const userInfo = await UserInfo.create({
+      firstName,
+      lastName,
+      gender,
+      dateOfBirth,
+      maritalStatus,
+      occupation,
+      address,
+      phoneNumber,
+      email,
+      identifications,
+    });
+
+    delete userInfo.__v;
+
+    return successResponse(
+      res,
+      201,
+      "User profile created successfully",
+      userInfo
+    );
+  } catch (error) {
+    errorResponse(res, 500, "Failed to create user info", error.message);
+  }
+});
+
+export const getUserInfo = asyncHandler(async (req, res) => {
+  try {
+    const { select, sort } = req.query;
+
+    const limit = parseInt(req.query.limit) || process.env.DEFAULT_PAGE_SIZE;
+    const page = parseInt(req.query.page) || 1;
+
+    let selectFields = "-__v"; // Always exclude __v
+    if (select) {
+      // Example: ?select=name,description
+      const fields = select.split(",").join(" ");
+      selectFields = `${fields} -__v`;
+    }
+
+    // ✅ Pagination options
+    const options = {
+      page,
+      limit,
+      select: selectFields,
+      sort: sort || "-createdAt",
+      lean: true,
+    };
+
+    const userInfos = await UserInfo.paginate({}, options);
+
+    return successResponse(res, 200, "data get successfully", userInfos);
+  } catch (error) {
+    return errorResponse(res, 500, "Failed to get roles info", error.message);
+  }
+});
+
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const updates = req.body;
+    const { id } = req.params;
+
+    // ✅ Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, 400, "Invalid ID format", []);
+    }
+
+    const updateUserProfile = await UserInfo.findByIdAndUpdate(id, updates, {
+      new: true, // return the updated document
+      runValidators: true, // ensure validation rules are applied
+    });
+
+    // 1️⃣ Check if ID exists
+    if (!updateUserProfile) {
+      return errorResponse(res, 404, "User profile not found", []);
+    }
+
+    // 2️⃣ Check if data actually changed
+    // (Compare with req.body or handle versioning)
+    if (Object.keys(updates).length === 0) {
+      return errorResponse(res, 400, "No fields to update", []);
+    }
+
+    return successResponse(
+      res,
+      200,
+      "data update successfully",
+      updateUserProfile
+    );
+  } catch (error) {
+    return errorResponse(
+      res,
+      500,
+      "Failed to update user profile by Id",
+      error.message
+    );
+  }
 });

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const identificationSchema = new mongoose.Schema(
   {
@@ -127,5 +128,7 @@ userInfoSchema.virtual("age").get(function () {
 
 // userInfoSchema.set("toJSON", { virtuals: true, id: false });
 // userInfoSchema.set("toObject", { virtuals: true, id: false });
+
+userInfoSchema.plugin(mongoosePaginate);
 
 export default mongoose.model("UserInfo", userInfoSchema);

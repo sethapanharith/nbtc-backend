@@ -1,5 +1,6 @@
 import { checkSchema } from "express-validator";
 import userModel from "../models/user.model.js";
+import userInfoModel from "../models/user.info.model.js";
 import mongoose from "mongoose";
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
@@ -149,6 +150,16 @@ export const userValidator = checkSchema({
     optional: true,
     isEmail: {
       errorMessage: "Must be a valid email address.",
+    },
+    custom: {
+      options: async (value) => {
+        if (!value) return true;
+        const emailExists = await userInfoModel.findOne({ email: value });
+        if (emailExists) {
+          throw new Error(`Email: ${value} already exists`);
+        }
+        return true;
+      },
     },
     normalizeEmail: true,
   },
