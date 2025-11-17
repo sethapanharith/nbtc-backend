@@ -2,8 +2,15 @@ import express from "express";
 import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import { eventValidator } from "../validators/event.validator.js";
 import { validateRequest } from "../middlewares/validation.js";
-import { createEvent, getEvents, updateEvent } from "../controllers/event.controller.js";
+import {
+  createEvent,
+  deleteEvent,
+  getEventById,
+  getEvents,
+  updateEvent,
+} from "../controllers/event.controller.js";
 import { updateEventValidator } from "../validators/event.update.validator.js";
+import { objectIdValidator } from "../validators/id.validator.js";
 
 const router = express.Router();
 /**
@@ -154,7 +161,7 @@ router.post(
  *     description: |
  *       Retrieve events with optional filtering and pagination.
  *       - Authentication required (Bearer Token).
- *       - Only users with role **Admin** or **Staff** can access.
+ *       - All users can see events.
  *       - Supports filtering by date range, cancellation status, and specific event ID.
  *     parameters:
  *       - in: query
@@ -420,6 +427,184 @@ router.put(
   updateEventValidator,
   validateRequest,
   updateEvent
+);
+
+/**
+ * @swagger
+ * /api/event/{id}:
+ *   delete:
+ *     summary: Soft delete (cancel) an event
+ *     description: |
+ *       Marks an event as canceled by setting `isCanceled = true`,
+ *       and tracks who updated it via `updatedBy` and timestamp.
+ *       Requires authentication and Admin/Staff role.
+ *
+ *     tags: [Events]
+ *
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "677fd518a91ff9e715aee1cc"
+ *         description: MongoDB ObjectId of the event to delete
+ *
+ *     responses:
+ *       200:
+ *         description: Event canceled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: Updated
+ *                 message:
+ *                   type: string
+ *                   example: Event canceled successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/Event'
+ *
+ *       400:
+ *         description: Validation error (invalid ID format)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: ValidationError
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request parameters
+ *
+ *       404:
+ *         description: Event not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: NotFound
+ *                 message:
+ *                   type: string
+ *                   example: Event not found
+ *
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: ServerError
+ *                 message:
+ *                   type: string
+ *                   example: Failed to delete event
+ */
+
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(["Admin", "Staff"]),
+  objectIdValidator("param", "id"),
+  validateRequest,
+  deleteEvent
+);
+
+/**
+ * @swagger
+ * /api/event/{id}:
+ *   get:
+ *     summary: get event by id
+ *     description: |
+ *       Requires authentication.
+ *       All users can get this event by id.
+ *       No need authorization.
+ *
+ *     tags: [Events]
+ *
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "677fd518a91ff9e715aee1cc"
+ *         description: MongoDB ObjectId of the event to delete
+ *
+ *     responses:
+ *       200:
+ *         description: Event canceled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: Updated
+ *                 message:
+ *                   type: string
+ *                   example: Event canceled successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/Event'
+ *
+ *       400:
+ *         description: Validation error (invalid ID format)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: ValidationError
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request parameters
+ *
+ *       404:
+ *         description: Event not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: NotFound
+ *                 message:
+ *                   type: string
+ *                   example: Event not found
+ *
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: ServerError
+ *                 message:
+ *                   type: string
+ *                   example: Failed to delete event
+ */
+router.get(
+  "/:id",
+  authenticate,
+  objectIdValidator("param", "id"),
+  validateRequest,
+  getEventById
 );
 
 export default router;

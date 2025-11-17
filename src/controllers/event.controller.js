@@ -1,7 +1,6 @@
 // controllers/eventController.js
 import asyncHandler from "express-async-handler";
 import { EventModel } from "../models/event.model.js";
-import { validationResult } from "express-validator";
 import { errorResponse, successResponse } from "../utils/response.handler.js";
 
 // CREATE EVENT
@@ -123,12 +122,62 @@ export const updateEvent = asyncHandler(async (req, res) => {
 
 // DELETE EVENT
 export const deleteEvent = asyncHandler(async (req, res) => {
-  const event = await Event.findByIdAndDelete(req.params.id);
+  try {
+    const { id } = req.params;
+    // 1️⃣ Validate ObjectId
+    if (!id) {
+      return errorResponse(res, 400, "Invalid Event ID");
+    }
 
-  if (!event)
-    return res
-      .status(404)
-      .json({ code: "NotFound", message: "Event not found" });
+    // 2️⃣ Find event
+    const event = await EventModel.findById(id);
+    if (!event) {
+      return errorResponse(res, 404, "Event not found");
+    }
 
-  res.json({ code: "Success", message: "Event deleted successfully" });
+    // 3️⃣ Soft delete
+    event.isCanceled = true;
+    event.updatedBy = req.user._id;
+    event.updatedAt = new Date();
+
+    const updatedEvent = await event.save();
+
+    // Check save success
+    if (!updatedEvent || !updatedEvent._id) {
+      return errorResponse(res, 500, "Failed to update event");
+    }
+
+    return successResponse(res, 200, "Event canceled successfully", []);
+  } catch (error) {
+    return errorResponse(res, 500, "Failed to delete event", error.message);
+  }
+});
+
+export const getEventById = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    // 1️⃣ Validate ObjectId
+    if (!id) {
+      return errorResponse(res, 400, "Invalid Event ID");
+    }
+
+    // 2️⃣ Find event
+    const event = await EventModel.findById(id)
+      .select("-__v")
+      .populate({
+        path: "createdBy",
+        select: "username fullName -_id",
+      })
+      .populate({
+        path: "updatedBy",
+        select: "username fullName -_id",
+      });
+    if (!event) {
+      return errorResponse(res, 404, "Event not found");
+    }
+
+    return successResponse(res, 200, "Get event by id successfully", event);
+  } catch (error) {
+    return errorResponse(res, 500, "Failed to get event by id", error.message);
+  }
 });
