@@ -350,6 +350,8 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     const updates = req.body;
     const { id } = req.params;
 
+    console.log("Update Data:", updates);
+
     // ✅ Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return errorResponse(res, 400, "Invalid ID format", []);

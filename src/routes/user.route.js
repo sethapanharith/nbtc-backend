@@ -8,6 +8,7 @@ import {
   createUser,
   createUserProfile,
   getUserInfo,
+  updateUserProfile,
 } from "../controllers/user.controller.js";
 import { userValidator } from "../validators/user.validator.js";
 import { validateRequest } from "../middlewares/validation.js";
@@ -252,7 +253,7 @@ router.post("/register-with-info", userValidator, validateRequest, createUser);
  *                       format: email
  *                       example: info@cadt.gov.kh
  *                     identifications:
- *                       type: object
+ *                       type: array
  *                       properties:
  *                         cardType:
  *                           type: string

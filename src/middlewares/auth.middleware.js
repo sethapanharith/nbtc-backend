@@ -24,7 +24,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       path: "roleId",
       populate: { path: "actions" },
     });
-
+    console.log(decoded);
     if (!user)
       return successResponse(
         res,
@@ -133,6 +133,7 @@ export const authorize = (roles = []) => {
           []
         );
       }
+
       return next();
     } catch (err) {
       return errorResponse(
