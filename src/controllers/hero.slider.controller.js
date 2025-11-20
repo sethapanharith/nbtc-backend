@@ -5,33 +5,36 @@ import { formatHeroSliderWithStream } from "../utils/minio.formatter.js";
 
 export const getHeroSliders = async (req, res) => {
   try {
-    const sliders = await HeroSliderModel.find().sort({ sort: 1 });
+    const sliders = await HeroSliderModel.find()
+      .sort({ sort: 1 })
+      .populate({ path: "createdBy", select: "username fullName -_id" });
     const data = sliders.map(formatHeroSliderWithStream);
-    res.status(200).json({ success: true, count: data.length, data });
+    // res.status(200).json({ success: true, count: data.length, data });
+    return successResponse(res, 200, "Data retrieved successfully", data);
   } catch (error) {
     return errorResponse(res, 500, "Internal Server Error", error.message);
   }
 };
 
-export const uploadSingleFile = async (req, res) => {
-  const file = req.file;
-  const newFile = new HeroSliderModel(file);
-  await newFile.save();
-  res.json(file);
-};
+// export const uploadSingleFile = async (req, res) => {
+//   const file = req.file;
+//   const newFile = new HeroSliderModel(file);
+//   await newFile.save();
+//   res.json(file);
+// };
 
-export const uploadMultiple = async (req, res) => {
-  const files = req.files;
-  if (!files || files.length === 0) {
-    return res.status(400).json({ message: "No files uploaded" });
-  }
-  // console.log(files)
-  const heroSliderModels = files.map((file) => new HeroSliderModel(file));
-  await Promise.all(
-    heroSliderModels.map((HeroSliderModel) => HeroSliderModel.save())
-  );
-  res.json(files);
-};
+// export const uploadMultiple = async (req, res) => {
+//   const files = req.files;
+//   if (!files || files.length === 0) {
+//     return res.status(400).json({ message: "No files uploaded" });
+//   }
+//   // console.log(files)
+//   const heroSliderModels = files.map((file) => new HeroSliderModel(file));
+//   await Promise.all(
+//     heroSliderModels.map((HeroSliderModel) => HeroSliderModel.save())
+//   );
+//   res.json(files);
+// };
 
 export const createHeroSlider = async (req, res) => {
   try {
@@ -98,6 +101,7 @@ export const deleteFileById = async (req, res) => {
 
     const { bucket, filename } = file.image;
 
+    await HeroSliderModel.deleteOne({ _id: file._id });
     await minioClient.removeObject(bucket, filename, {});
     return successResponse(res, 200, "File deleted successfully", null);
   } catch (error) {

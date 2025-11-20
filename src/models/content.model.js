@@ -27,8 +27,7 @@ const imageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-  },
-  { _id: false }
+  }
 );
 
 const detailSchema = new mongoose.Schema(
@@ -43,8 +42,7 @@ const detailSchema = new mongoose.Schema(
       type: [imageSchema],
       default: [],
     },
-  },
-  { _id: false }
+  }
 );
 
 const contentSchema = new mongoose.Schema(
